@@ -68,12 +68,26 @@ const translations = {
 }
 
 export default function App() {
-  const [language, setLanguage] = useState('en')
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [language, setLanguage] = useState(() => {
+    const savedLanguage = localStorage.getItem('cockpit-language')
+    return savedLanguage === 'hi' ? 'hi' : 'en'
+  })
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem('cockpit-theme')
+    if (savedTheme === 'light') {
+      return false
+    }
+    return true
+  })
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDarkMode)
+    localStorage.setItem('cockpit-theme', isDarkMode ? 'dark' : 'light')
   }, [isDarkMode])
+
+  useEffect(() => {
+    localStorage.setItem('cockpit-language', language)
+  }, [language])
 
   const t = useMemo(() => translations[language], [language])
 
