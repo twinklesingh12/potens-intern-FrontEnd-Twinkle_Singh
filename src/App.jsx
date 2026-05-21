@@ -20,6 +20,13 @@ const translations = {
     todayAtGlanceCopy:
       'Routing is now in place and this index dashboard acts as the foundation for action queues, anomaly tracking, and live metrics.',
     quickActions: 'Quick actions',
+    liveCounterTitle: 'Live SLA Breach Window',
+    liveCounterLabel: 'Remaining to acknowledge critical incident',
+    anomaliesTitle: 'Automated anomaly flags',
+    anomaliesSubtitle: 'Latest detections from the monitoring engine',
+    anomalySeverity: 'Severity',
+    anomalyScore: 'Score',
+    anomalyTrendTitle: 'Anomaly trend (last 6 hours)',
     approve: 'Approve',
     hold: 'Hold',
     languageOptions: {
@@ -51,6 +58,13 @@ const translations = {
     todayAtGlanceCopy:
       'रूटिंग अब सेट है और यह इंडेक्स डैशबोर्ड एक्शन कतार, विसंगति ट्रैकिंग और लाइव मेट्रिक्स की नींव बनाता है।',
     quickActions: 'त्वरित एक्शन',
+    liveCounterTitle: 'लाइव SLA ब्रीच विंडो',
+    liveCounterLabel: 'गंभीर घटना स्वीकार करने के लिए शेष समय',
+    anomaliesTitle: 'स्वचालित विसंगति अलर्ट',
+    anomaliesSubtitle: 'मॉनिटरिंग इंजन से नवीनतम पहचान',
+    anomalySeverity: 'गंभीरता',
+    anomalyScore: 'स्कोर',
+    anomalyTrendTitle: 'विसंगति ट्रेंड (पिछले 6 घंटे)',
     approve: 'स्वीकृत करें',
     hold: 'रोकें',
     languageOptions: {
