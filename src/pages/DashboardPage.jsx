@@ -7,6 +7,9 @@ export default function DashboardPage({
   isDarkMode,
   setIsDarkMode,
 }) {
+  const initialApprovalsPending = Number.parseInt(t.kpiCards[2]?.value, 10) || 13
+  const [approvalsPending, setApprovalsPending] = useState(initialApprovalsPending)
+  const [approvedQuickCount, setApprovedQuickCount] = useState(0)
   const [removedActionIds, setRemovedActionIds] = useState([])
   const [slidingActionIds, setSlidingActionIds] = useState([])
 
@@ -24,9 +27,31 @@ export default function DashboardPage({
     )
   }, [language, t.mockQuickActions])
 
-  const handleActionClick = (itemId) => {
+  const kpiCards = useMemo(() => {
+    const cards = [...t.kpiCards]
+    if (cards[0]) {
+      cards[0] = { ...cards[0], value: String(visibleQuickActions.length) }
+    }
+    if (cards[2]) {
+      cards[2] = {
+        ...cards[2],
+        value: String(approvalsPending),
+        detail:
+          approvedQuickCount > 0
+            ? `${cards[2].detail} · ${approvedQuickCount} approved`
+            : cards[2].detail,
+      }
+    }
+    return cards
+  }, [approvalsPending, approvedQuickCount, t.kpiCards, visibleQuickActions.length])
+
+  const handleQuickActionClick = (itemId, decision) => {
     if (removedActionIds.includes(itemId) || slidingActionIds.includes(itemId)) {
       return
+    }
+    if (decision === 'approve') {
+      setApprovalsPending((current) => Math.max(0, current - 1))
+      setApprovedQuickCount((current) => current + 1)
     }
     setSlidingActionIds((current) => [...current, itemId])
     setTimeout(() => {
@@ -89,7 +114,7 @@ export default function DashboardPage({
         </header>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {t.kpiCards.map((card) => (
+          {kpiCards.map((card) => (
             <article
               key={card.label}
               className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
@@ -131,14 +156,14 @@ export default function DashboardPage({
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => handleActionClick(item.id)}
+                      onClick={() => handleQuickActionClick(item.id, 'approve')}
                       className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-semibold text-white"
                     >
                       {t.approve}
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleActionClick(item.id)}
+                      onClick={() => handleQuickActionClick(item.id, 'hold')}
                       className="rounded-md bg-amber-600 px-3 py-1 text-xs font-semibold text-white"
                     >
                       {t.hold}
