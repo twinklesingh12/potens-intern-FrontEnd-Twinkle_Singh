@@ -1,62 +1,110 @@
-const kpiCards = [
-  { label: 'Open Actions', value: '24', detail: '+6 since 09:00' },
-  { label: 'Anomalies', value: '7', detail: '2 critical' },
-  { label: 'Approvals Pending', value: '13', detail: '4 due in 2 hours' },
-  { label: 'System Health', value: '98.4%', detail: 'All regions stable' },
-]
-
-const quickActions = [
-  'Review high-priority incidents',
-  'Clear pending operations approvals',
-  'Validate overnight monitoring summary',
-]
-
-export default function DashboardPage() {
+export default function DashboardPage({
+  t,
+  language,
+  setLanguage,
+  isDarkMode,
+  setIsDarkMode,
+}) {
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
+    <main className="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
       <div className="mx-auto w-full max-w-7xl px-6 py-8 md:px-8">
-        <header className="mb-8 flex items-end justify-between border-b border-slate-200 pb-5">
+        <header className="mb-8 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-5 dark:border-slate-800">
+          <div className="text-lg font-semibold tracking-tight">{t.logo}</div>
+          <div className="flex items-center gap-3">
+            <label className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+              <span>{t.darkMode}</span>
+              <button
+                type="button"
+                onClick={() => setIsDarkMode((prev) => !prev)}
+                className={`h-7 w-12 rounded-full p-1 transition ${
+                  isDarkMode ? 'bg-slate-700' : 'bg-slate-300'
+                }`}
+                aria-label={t.darkMode}
+              >
+                <span
+                  className={`block h-5 w-5 rounded-full bg-white transition ${
+                    isDarkMode ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </label>
+
+            <label className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+              <span>{t.languageLabel}</span>
+              <select
+                value={language}
+                onChange={(event) => setLanguage(event.target.value)}
+                className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
+                aria-label={t.languageLabel}
+              >
+                <option value="en">{t.languageOptions.en}</option>
+                <option value="hi">{t.languageOptions.hi}</option>
+              </select>
+            </label>
+          </div>
+        </header>
+
+        <header className="mb-8 flex items-end justify-between border-b border-slate-200 pb-5 dark:border-slate-800">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Cockpit Dashboard
+            <p className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              {t.dashboardTitle}
             </p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-              Operations Overview
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight dark:text-slate-100">
+              {t.overviewTitle}
             </h1>
           </div>
-          <p className="text-sm text-slate-500">Updated just now</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {t.updatedNow}
+          </p>
         </header>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {kpiCards.map((card) => (
+          {t.kpiCards.map((card) => (
             <article
               key={card.label}
-              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
             >
-              <p className="text-sm text-slate-500">{card.label}</p>
-              <p className="mt-2 text-3xl font-semibold text-slate-900">
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {card.label}
+              </p>
+              <p className="mt-2 text-3xl font-semibold text-slate-900 dark:text-slate-100">
                 {card.value}
               </p>
-              <p className="mt-2 text-sm text-slate-500">{card.detail}</p>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                {card.detail}
+              </p>
             </article>
           ))}
         </section>
 
         <section className="mt-8 grid gap-4 xl:grid-cols-3">
-          <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
-            <h2 className="text-lg font-semibold">Today at a glance</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              Routing is now in place and this index dashboard acts as the
-              foundation for action queues, anomaly tracking, and live metrics.
+          <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2 dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="text-lg font-semibold">{t.todayAtGlance}</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              {t.todayAtGlanceCopy}
             </p>
           </article>
 
-          <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold">Quick actions</h2>
-            <ul className="mt-3 space-y-2 text-sm text-slate-600">
-              {quickActions.map((item) => (
-                <li key={item} className="rounded-md bg-slate-100 px-3 py-2">
-                  {item}
+          <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <h2 className="text-lg font-semibold">{t.quickActions}</h2>
+            <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+              {t.mockQuickActions.map((item) => (
+                <li key={item.id} className="rounded-md bg-slate-100 px-3 py-3 dark:bg-slate-800">
+                  <p className="mb-2">{item.text}</p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-semibold text-white"
+                    >
+                      {t.approve}
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-md bg-amber-600 px-3 py-1 text-xs font-semibold text-white"
+                    >
+                      {t.hold}
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
