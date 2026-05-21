@@ -1,3 +1,5 @@
+import { useEffect, useMemo, useState } from 'react'
+
 export default function DashboardPage({
   t,
   language,
@@ -5,6 +7,34 @@ export default function DashboardPage({
   isDarkMode,
   setIsDarkMode,
 }) {
+  const [removedActionIds, setRemovedActionIds] = useState([])
+  const [slidingActionIds, setSlidingActionIds] = useState([])
+
+  const visibleQuickActions = useMemo(
+    () => t.mockQuickActions.filter((item) => !removedActionIds.includes(item.id)),
+    [removedActionIds, t.mockQuickActions],
+  )
+
+  useEffect(() => {
+    setSlidingActionIds((current) =>
+      current.filter((id) => t.mockQuickActions.some((item) => item.id === id)),
+    )
+    setRemovedActionIds((current) =>
+      current.filter((id) => t.mockQuickActions.some((item) => item.id === id)),
+    )
+  }, [language, t.mockQuickActions])
+
+  const handleActionClick = (itemId) => {
+    if (removedActionIds.includes(itemId) || slidingActionIds.includes(itemId)) {
+      return
+    }
+    setSlidingActionIds((current) => [...current, itemId])
+    setTimeout(() => {
+      setRemovedActionIds((current) => [...current, itemId])
+      setSlidingActionIds((current) => current.filter((id) => id !== itemId))
+    }, 260)
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
       <div className="mx-auto w-full max-w-7xl px-6 py-8 md:px-8">
@@ -88,18 +118,27 @@ export default function DashboardPage({
           <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <h2 className="text-lg font-semibold">{t.quickActions}</h2>
             <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
-              {t.mockQuickActions.map((item) => (
-                <li key={item.id} className="rounded-md bg-slate-100 px-3 py-3 dark:bg-slate-800">
+              {visibleQuickActions.map((item) => (
+                <li
+                  key={item.id}
+                  className={`rounded-md bg-slate-100 px-3 py-3 transition-all duration-300 dark:bg-slate-800 ${
+                    slidingActionIds.includes(item.id)
+                      ? 'translate-x-8 opacity-0'
+                      : 'translate-x-0 opacity-100'
+                  }`}
+                >
                   <p className="mb-2">{item.text}</p>
                   <div className="flex gap-2">
                     <button
                       type="button"
+                      onClick={() => handleActionClick(item.id)}
                       className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-semibold text-white"
                     >
                       {t.approve}
                     </button>
                     <button
                       type="button"
+                      onClick={() => handleActionClick(item.id)}
                       className="rounded-md bg-amber-600 px-3 py-1 text-xs font-semibold text-white"
                     >
                       {t.hold}
