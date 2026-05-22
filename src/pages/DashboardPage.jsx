@@ -70,6 +70,7 @@ export default function DashboardPage({
   }, [visibleAnomalyItems])
 
   useEffect(() => {
+    // Language switch swaps the translated list content; keep only ids that still exist.
     setSlidingActionIds((current) =>
       current.filter((id) => t.mockQuickActions.some((item) => item.id === id)),
     )
@@ -88,6 +89,7 @@ export default function DashboardPage({
   }, [language])
 
   const kpiCards = useMemo(() => {
+    // KPI cards are derived from live interaction state so numbers stay consistent with UI actions.
     const cards = [...t.kpiCards]
     if (cards[0]) {
       cards[0] = { ...cards[0], value: String(visibleQuickActions.length) }
@@ -152,12 +154,14 @@ export default function DashboardPage({
       setApprovedQuickCount((current) => current + 1)
     }
     if (decision === 'hold') {
+      // Hold keeps the row visible and moves it into a paused decision state.
       setHeldQuickIds((current) =>
         current.includes(itemId) ? current : [...current, itemId],
       )
       return
     }
     setSlidingActionIds((current) => [...current, itemId])
+    // Delay actual removal to let the slide/fade transition complete.
     setTimeout(() => {
       setRemovedActionIds((current) => [...current, itemId])
       setSlidingActionIds((current) => current.filter((id) => id !== itemId))
