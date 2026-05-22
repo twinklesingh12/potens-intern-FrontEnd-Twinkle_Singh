@@ -5,28 +5,28 @@ const anomalyItems = [
     id: 'AN-1082',
     source: 'Compressor Line 2',
     context: 'Vibration crossed dynamic threshold for 3 continuous minutes.',
-    severity: 'High',
+    severity: 'high',
     score: 92,
   },
   {
     id: 'AN-1083',
     source: 'Dispatch Queue',
     context: 'Outbound dispatch latency is 2.1x above baseline.',
-    severity: 'Medium',
+    severity: 'medium',
     score: 74,
   },
   {
     id: 'AN-1084',
     source: 'Cold Storage Bay A',
     context: 'Temperature drift detected against expected cooling curve.',
-    severity: 'High',
+    severity: 'high',
     score: 89,
   },
   {
     id: 'AN-1085',
     source: 'Packaging Unit',
     context: 'Optical rejection rate rose from 1.2% to 4.6% in 20 minutes.',
-    severity: 'Critical',
+    severity: 'critical',
     score: 97,
   },
 ]
@@ -48,6 +48,8 @@ export default function DashboardPage({
   const [slidingActionIds, setSlidingActionIds] = useState([])
   const [resolvedAnomalyIds, setResolvedAnomalyIds] = useState([])
   const [slidingAnomalyIds, setSlidingAnomalyIds] = useState([])
+  const [heldQuickIds, setHeldQuickIds] = useState([])
+  const [heldAnomalyIds, setHeldAnomalyIds] = useState([])
 
   const visibleQuickActions = useMemo(
     () => t.mockQuickActions.filter((item) => !removedActionIds.includes(item.id)),
@@ -57,6 +59,15 @@ export default function DashboardPage({
     () => anomalyItems.filter((item) => !resolvedAnomalyIds.includes(item.id)),
     [resolvedAnomalyIds],
   )
+  const anomalyCounts = useMemo(() => {
+    return visibleAnomalyItems.reduce(
+      (acc, item) => {
+        acc[item.severity] += 1
+        return acc
+      },
+      { critical: 0, high: 0, medium: 0 },
+    )
+  }, [visibleAnomalyItems])
 
   useEffect(() => {
     setSlidingActionIds((current) =>
@@ -87,18 +98,47 @@ export default function DashboardPage({
         value: String(approvalsPending),
         detail:
           approvedQuickCount > 0
-            ? `${cards[2].detail} · ${approvedQuickCount} approved`
+            ? `${cards[2].detail} · ${approvedQuickCount} ${t.approvedCountLabel}`
             : cards[2].detail,
       }
     }
     if (cards[1]) {
-      cards[1] = { ...cards[1], value: String(visibleAnomalyItems.length) }
+      cards[1] = {
+        ...cards[1],
+        value: String(visibleAnomalyItems.length),
+        detail: `${anomalyCounts.high} ${t.highLabel} · ${anomalyCounts.critical} ${t.criticalLabel}`,
+      }
+    }
+    if (cards[3]) {
+      const riskPoints =
+        anomalyCounts.critical * 6 +
+        anomalyCounts.high * 3 +
+        anomalyCounts.medium * 1 +
+        heldQuickIds.length
+      const healthScore = Math.max(70, 100 - riskPoints)
+      cards[3] = {
+        ...cards[3],
+        value: `${healthScore.toFixed(1)}%`,
+        detail:
+          healthScore >= 92
+            ? t.systemHealthDetailGood
+            : t.systemHealthDetailWatch,
+      }
     }
     return cards
   }, [
     approvalsPending,
     approvedQuickCount,
     t.kpiCards,
+    t.approvedCountLabel,
+    t.criticalLabel,
+    t.highLabel,
+    t.systemHealthDetailGood,
+    t.systemHealthDetailWatch,
+    anomalyCounts.critical,
+    anomalyCounts.high,
+    anomalyCounts.medium,
+    heldQuickIds.length,
     visibleAnomalyItems.length,
     visibleQuickActions.length,
   ])
@@ -110,6 +150,12 @@ export default function DashboardPage({
     if (decision === 'approve') {
       setApprovalsPending((current) => Math.max(0, current - 1))
       setApprovedQuickCount((current) => current + 1)
+    }
+    if (decision === 'hold') {
+      setHeldQuickIds((current) =>
+        current.includes(itemId) ? current : [...current, itemId],
+      )
+      return
     }
     setSlidingActionIds((current) => [...current, itemId])
     setTimeout(() => {
@@ -127,6 +173,38 @@ export default function DashboardPage({
       setResolvedAnomalyIds((current) => [...current, itemId])
       setSlidingAnomalyIds((current) => current.filter((id) => id !== itemId))
     }, 260)
+  }
+
+  const toggleQuickPause = (itemId) => {
+    setHeldQuickIds((current) =>
+      current.includes(itemId)
+        ? current.filter((id) => id !== itemId)
+        : [...current, itemId],
+    )
+  }
+
+  const handleAnomalyDecision = (itemId, decision) => {
+    if (decision === 'hold') {
+      setHeldAnomalyIds((current) =>
+        current.includes(itemId) ? current : [...current, itemId],
+      )
+      return
+    }
+    handleAnomalyActionClick(itemId)
+  }
+
+  const toggleAnomalyPause = (itemId) => {
+    setHeldAnomalyIds((current) =>
+      current.includes(itemId)
+        ? current.filter((id) => id !== itemId)
+        : [...current, itemId],
+    )
+  }
+
+  const getSeverityLabel = (severity) => {
+    if (severity === 'critical') return t.criticalLabel
+    if (severity === 'high') return t.highLabel
+    return t.mediumLabel
   }
 
   useEffect(() => {
@@ -246,22 +324,37 @@ export default function DashboardPage({
                   }`}
                 >
                   <p className="mb-2">{item.text}</p>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleQuickActionClick(item.id, 'approve')}
-                      className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-semibold text-white"
-                    >
-                      {t.approve}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleQuickActionClick(item.id, 'hold')}
-                      className="rounded-md bg-amber-600 px-3 py-1 text-xs font-semibold text-white"
-                    >
-                      {t.hold}
-                    </button>
-                  </div>
+                  {heldQuickIds.includes(item.id) ? (
+                    <div className="flex items-center gap-3">
+                      <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                        {t.holdMessage}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => toggleQuickPause(item.id)}
+                        className="rounded-md bg-slate-700 px-3 py-1 text-xs font-semibold text-white"
+                      >
+                        {t.pauseLabel}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleQuickActionClick(item.id, 'approve')}
+                        className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-semibold text-white"
+                      >
+                        {t.approve}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickActionClick(item.id, 'hold')}
+                        className="rounded-md bg-amber-600 px-3 py-1 text-xs font-semibold text-white"
+                      >
+                        {t.hold}
+                      </button>
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -294,29 +387,44 @@ export default function DashboardPage({
                     </div>
                     <div className="text-right text-xs text-slate-500 dark:text-slate-400">
                       <p>
-                        {t.anomalySeverity}: {item.severity}
+                        {t.anomalySeverity}: {getSeverityLabel(item.severity)}
                       </p>
                       <p>
                         {t.anomalyScore}: {item.score}
                       </p>
                     </div>
                   </div>
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleAnomalyActionClick(item.id)}
-                      className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-semibold text-white"
-                    >
-                      {t.approve}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleAnomalyActionClick(item.id)}
-                      className="rounded-md bg-amber-600 px-3 py-1 text-xs font-semibold text-white"
-                    >
-                      {t.hold}
-                    </button>
-                  </div>
+                  {heldAnomalyIds.includes(item.id) ? (
+                    <div className="mt-3 flex items-center gap-3">
+                      <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                        {t.holdMessage}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => toggleAnomalyPause(item.id)}
+                        className="rounded-md bg-slate-700 px-3 py-1 text-xs font-semibold text-white"
+                      >
+                        {t.pauseLabel}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleAnomalyDecision(item.id, 'approve')}
+                        className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-semibold text-white"
+                      >
+                        {t.approve}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAnomalyDecision(item.id, 'hold')}
+                        className="rounded-md bg-amber-600 px-3 py-1 text-xs font-semibold text-white"
+                      >
+                        {t.hold}
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
